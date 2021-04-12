@@ -3,11 +3,21 @@ import lib.func2d as f2d
 import random
 import math
 import numpy as np
+from timeit import default_timer as timer
+import time
 
 class Environment():
     def __init__(self, size):
         self.size = np.array(size)
+        self.running = False
+        self.iter_freq = 0
+        self.target_freq = 30
         self.physical = []
+
+        # Initialize environment TODO make it possible to chose between different initial states
+        self.add_agent("manual", np.array(self.size)/2)
+        for i in range(10):
+            self.add_agent("autonomous")
 
     # Advance to next iteration
     def next(self):
@@ -41,6 +51,17 @@ class Environment():
         for entity in self.physical:
             entity.next()
 
+    def run(self):
+        self.running = True
+        time1 = timer()
+        while self.running:
+            self.next()
+            time2 = timer()
+            period = time2 - time1
+            self.iter_freq = 1/period
+            sleep_time = 1/self.target_freq - period
+            time.sleep(sleep_time)
+            time1 = timer()
 
     def add_agent(self, type, position=None):
         # If position not supplied, put to random position
