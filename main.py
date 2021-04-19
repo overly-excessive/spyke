@@ -32,9 +32,9 @@ def graphics(env):
                 if event.key == pygame.K_UP:
                     env.physical[0].move(2)
                 elif event.key == pygame.K_RIGHT:
-                    env.physical[0].angle += math.radians(15)
+                    env.physical[0].turn_right()
                 elif event.key == pygame.K_LEFT:
-                    env.physical[0].angle -= math.radians(15)
+                    env.physical[0].turn_left()
 
         # drawing window border
         pygame.draw.line(win, "gray", (env_size[0]+1, 0), (env_size[0]+1, win_size[1]))

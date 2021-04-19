@@ -3,6 +3,7 @@ import random
 import numpy as np
 
 from . import func2d as f2d
+from . import network
 
 class Agent1():
     def __init__(self, position):
@@ -21,6 +22,11 @@ class Agent1():
 
         self.radius = 10
         self.color = "blue"
+
+        self.actions = [self.move, self.turn_left, self.turn_right]
+
+        self.network = network.Network(self)
+        self.network.load_network()
 
     def next(self):
 
@@ -41,8 +47,17 @@ class Agent1():
         # force decays TODO make it possible for the force to be a float value
         if self.force >= 1: self.force -= 1
 
-    def move(self, force):
+        # iterate the networks
+        self.network.next()
+
+    def move(self, force=1):
         self.force += force
+
+    def turn_right(self):
+        self.angle += math.radians(15)
+
+    def turn_left(self):
+        self.angle -= math.radians(15)
 
 class Agent2(Agent1):
     def __init__(self, position):
