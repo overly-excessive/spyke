@@ -1,10 +1,9 @@
 from .agents2d import Agent1, Agent2
-import lib.func2d as f2d
 import random
-import math
 import numpy as np
 from timeit import default_timer as timer
 import time
+
 
 class Environment():
     def __init__(self, size):
@@ -13,9 +12,10 @@ class Environment():
         self.iter_freq = 0
         self.target_freq = 30
         self.physical = []
+        self.agent_count = 0
 
         # Initialize environment TODO make it possible to chose between different initial states
-        self.add_agent("manual", np.array(self.size)/2)
+        self.add_agent("manual", np.array(self.size) / 2)
         for i in range(10):
             self.add_agent("autonomous")
 
@@ -45,8 +45,8 @@ class Environment():
                 if d <= entity.radius + entity2.radius:
                     v1 = entity.vel
                     v2 = entity2.vel
-                    entity.vel = v1 - np.dot(v1-v2, pos_diff)/pow(d, 2) * pos_diff
-                    entity2.vel = v2 - np.dot(v2-v1, pos_diff)/pow(d, 2) * pos_diff
+                    entity.vel = v1 - np.dot(v1 - v2, pos_diff) / pow(d, 2) * pos_diff
+                    entity2.vel = v2 - np.dot(v2 - v1, pos_diff) / pow(d, 2) * pos_diff
 
         for entity in self.physical:
             entity.next()
@@ -58,8 +58,8 @@ class Environment():
             self.next()
             time2 = timer()
             period = time2 - time1
-            self.iter_freq = 1/period
-            sleep_time = 1/self.target_freq - period
+            self.iter_freq = 1 / period
+            sleep_time = 1 / self.target_freq - period
             time.sleep(sleep_time)
             time1 = timer()
 
@@ -69,8 +69,10 @@ class Environment():
             position = np.array((random.uniform(10, self.size[0] - 10), random.uniform(10, self.size[1] - 10)))
 
         if type == "manual":
-            self.physical.append(Agent1(position))
+            self.physical.append(Agent1(position, self))
         elif type == "autonomous":
-            self.physical.append(Agent2(position))
+            self.physical.append(Agent2(position, self))
         else:
             raise ValueError
+
+        self.agent_count += 1

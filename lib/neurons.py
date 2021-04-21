@@ -1,23 +1,27 @@
 import numpy as np
 
+
 class Neuron():
     # parent class of all Neurons
     def __init__(self, network, id):
         # A refference to the network object that the neuron is a part of
         self.network = network
 
-        # ids start from 0. When sorted by id, the input neurons come first, then output, and interneurons last
+        # ids start from 0. When sorted by id, the input neurons come first,
+        # then output, and interneurons last
         self.id = id
 
     def spike(self):
-        # TODO add time delay, because takes time for the spike to propagate along the axon
+        # TODO add time delay, because takes time for the spike to propagate
+        # along the axon
         # spike method called when the neuron fires
         # append a spike event to the network event queue
-        self.network.event_queue.append(self.id)
+        self.network.event_queue.put(self.id)
 
     def add_synapse(self):
         # TODO write this function
         pass
+
 
 class Neuron_LIF(Neuron):
     # Leaky Integrate and fire Neuron
@@ -41,14 +45,15 @@ class Neuron_LIF(Neuron):
     def excite(self, ammount):
         self.activation += ammount
 
+
 class Neuron_random(Neuron):
     # Neuron that spikes at random times
     def __init__(self, network, id):
         super().__init__(network, id)
 
         # the expected value of iterations between consecutive spikes
-        self.exp_spike_period = 100
-        self.spike_p = 1/self.exp_spike_period
+        self.exp_spike_period = 20
+        self.spike_p = 1 / self.exp_spike_period
 
     def next(self):
         rand = np.random.uniform()
