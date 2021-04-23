@@ -1,7 +1,5 @@
 import numpy as np
 
-from . import network
-
 
 def pol2cart(rho, phi):
     x = rho * np.cos(phi)
@@ -18,30 +16,41 @@ def divide_line(Apos, Bpos, n):
     return result
 
 
-# Object that generates a 2D representation of a network
-class Embedding():
+# Only works with lists of form [time, id, next], these are referred to as events
+class EventQueue():
+    def __init__(self):
+        self.head = None
 
-    square_size = 15    # squares represent inputs and outputs
-    circle_radius = 8   # circles represent neurons
+    # Insert event into the event queue
+    def insert(self, time, id):
+        event = [time, id, None]
+        # if queue is empty, just add the event and return
+        if not self.head:
+            self.head = event
+            return
 
-    def __init__(self, net: network.Network, size):
-        self.size = size
-        self.input_count = len(net.inputs)
-        self.output_count = len(net.outputs)
-        self.neuron_count = len(net.interneurons)
+        # else, iterate to insertion position
+        next = self.head
+        previous = None
+        while next[2] and event[0] > next[0]:
+            previous = next
+            next = next[2]
 
-        self.input_positions = np.zeros((self.input_count, 2))
-        self.output_positions = np.zeros((self.output_count, 2))
-        self.neuron_positions = np.zeros((self.neuron_count, 2))
+        # and insert event
+        if not previous:
+            self.head = event
+        else:
+            previous[2] = event
+        event[2] = next
 
-    def compute(self):
-        # compute inputs
-        self.input_positions = divide_line(
-            np.array((0, - Embedding.square_size / 2)),
-            np.array((0, self.size[1] - Embedding.square_size / 2)),
-            self.input_count)
-        # compute outputs
-        self.output_positions = divide_line(
-            np.array((self.size[0] - Embedding.square_size, - Embedding.square_size / 2)),
-            np.array((self.size[0] - Embedding.square_size, self.size[1] - Embedding.square_size / 2)),
-            self.output_count)
+    # check if there is more events for supplied time
+    def check(self, time):
+        if not self.head: return False
+        if self.head[0] == time: return True
+        else: return False
+
+    # get next event
+    def get(self):
+        event = self.head
+        self.head = self.head[2]
+        return event[1]

@@ -5,6 +5,7 @@ import numpy as np
 
 from lib.env2d import Environment
 import lib.util2d as u2d
+from lib.embedding import Embedding
 
 
 class Interface():
@@ -103,7 +104,7 @@ class Interface():
         # DRAW NETWORK
         # check if selection changed, because only then a new embedding is generated
         if self.displayed_agent != self.selected_agent:
-            self.embedding = u2d.Embedding(
+            self.embedding = Embedding(
                 self.env.physical[self.selected_agent].network,
                 np.ones(2) * self.net_win_size)
             self.embedding.compute()
@@ -111,8 +112,12 @@ class Interface():
 
         # only if agent is selected
         if self.selected_agent != -1:
-            # display agent id
-            display_text("id: " + str(self.selected_agent), (self.env_size[0] + 2, 2))
+            # display text elements
+            display_text(
+                "id: " + str(self.selected_agent),
+                (self.env_size[0] + 2, self.net_win_size - 2 - self.font.get_height()))
+            display_text("IN", (self.env_size[0] + 2, 2))
+            display_text("OUT", (self.win_size[0] - 20, 2))
 
             # display inputs
             for pos in self.embedding.input_positions:
@@ -120,7 +125,7 @@ class Interface():
                     self.win,
                     "gray",
                     (pos + np.array((self.env_size[0], 0)),
-                        (u2d.Embedding.square_size, u2d.Embedding.square_size)),
+                        (Embedding.square_size, Embedding.square_size)),
                     1)
 
             # display outputs
@@ -129,11 +134,25 @@ class Interface():
                     self.win,
                     "gray",
                     (pos + np.array((self.env_size[0], 0)),
-                        (u2d.Embedding.square_size, u2d.Embedding.square_size)),
+                        (Embedding.square_size, Embedding.square_size)),
                     1)
 
-        # TODO display neurons
-        # TODO display synapses
+            # display neurons
+            for pos in self.embedding.neuron_positions:
+                pygame.draw.circle(
+                    self.win,
+                    "gray",
+                    pos + np.array((self.env_size[0], 0)),
+                    Embedding.circle_radius,
+                    1)
+
+            # display synapses
+            for coords in self.embedding.synapse_positions:
+                pygame.draw.line(
+                    self.win,
+                    "gray",
+                    coords[0] + np.array((self.env_size[0], 0)),
+                    coords[1] + np.array((self.env_size[0], 0)))
 
     def run(self):
         self.setup()

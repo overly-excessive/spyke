@@ -6,6 +6,8 @@ class Neuron():
     def __init__(self, network, id):
         # A refference to the network object that the neuron is a part of
         self.network = network
+        self.axon_lenght = 10   # 10 lentgh units means number of iterations it
+                                # takes a spike to reach the end
 
         # ids start from 0. When sorted by id, the input neurons come first,
         # then output, and interneurons last
@@ -16,7 +18,7 @@ class Neuron():
         # along the axon
         # spike method called when the neuron fires
         # append a spike event to the network event queue
-        self.network.event_queue.put(self.id)
+        self.network.event_queue.insert(self.network.clock + self.axon_lenght, self.id)
 
     def add_synapse(self):
         # TODO write this function

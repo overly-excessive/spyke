@@ -1,7 +1,7 @@
 import numpy as np
-import queue
 
 from . import neurons
+from .util2d import EventQueue
 
 
 class Network():
@@ -24,7 +24,7 @@ class Network():
         # TODO add other things into the event later like time of spike, axon coordinates, maybe neurotransmitter type
         # TODO think about possible maxsize value
         # TODO at one point future events will also be added, maybe priority que will be better then
-        self.event_queue = queue.Queue()
+        self.event_queue = EventQueue()
 
         # connectome matrix W where wij is the synnapse weight between ith pre-synaptic and jth post-synaptic neuron
         # it is initialized with only the input and output neurons none of which are connected making the connectome an all zero matrix
@@ -33,9 +33,8 @@ class Network():
 
     def next(self):
         self.clock += 1
-        # TODO this line might lose all the benefits of a queue
-        while not self.event_queue.empty():
-            event = self.event_queue.get(False)
+        while self.event_queue.check(self.clock):
+            event = self.event_queue.get()
 
             # make event vector
             e = np.zeros(self.neuron_count)
@@ -47,7 +46,7 @@ class Network():
                 self.outputs[action]()
                 # TODO only works on output neurons for now, expand to all other types
 
-        # TODO iteration of individual neurons
+        # iteration of individual neurons
         for neuron in self.interneurons:
             neuron.next()
 
