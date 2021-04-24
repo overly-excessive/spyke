@@ -1,4 +1,5 @@
 import pygame
+import pygame_gui
 import threading
 import math
 import numpy as np
@@ -15,25 +16,29 @@ class Interface():
         self.win_size = (1920, 1015)
         self.net_win_size = 500
         self.env_size = (self.win_size[0] - self.net_win_size, self.win_size[1])
-        self.running = False
         self.fps = 30
         self.selected_agent = -1    # -1 means none here
         self.displayed_agent = -1
+        self.env = Environment(self.env_size)
+        self.env_thread = threading.Thread(target=self.env.run)
         self.embedding = None
 
-    def setup(self):
         # Initialize graphical interface
         pygame.init()
         self.win = pygame.display.set_mode(self.win_size)
         pygame.display.set_caption("Spyke")
         self.font = pygame.font.SysFont("Hermit", 15)
+        self.manager = pygame_gui.UIManager(self.win_size)
         self.clock = pygame.time.Clock()
         self.running = True
 
-        # Initialize environment model
-        self.env = Environment(self.env_size)
-        self.env_thread = threading.Thread(target=self.env.run)
-        self.env_thread.start()
+        # Initialize GUI elements
+        self.start_button = pygame_gui.elements.ui_button.UIButton(
+            relative_rect=pygame.Rect(
+                (self.env_size[0] + 10, self.net_win_size + 100),
+                (60, 30)),
+            text='Start',
+            manager=self.manager)
 
     def quit(self):
         # stop environment and exit
@@ -42,6 +47,7 @@ class Interface():
         pygame.quit()
 
     def handle(self, event):
+        self.manager.process_events(event)
 
         # Handle keypresses
         if event.type == pygame.KEYDOWN:
@@ -61,8 +67,19 @@ class Interface():
                 if dist <= entity.radius:
                     self.selected_agent = entity.id
 
-    def render(self):
+        # Handle GUI events
+        if event.type == pygame.USEREVENT:
+            if event.user_type == pygame_gui.UI_BUTTON_PRESSED:
+                if event.ui_element == self.start_button:
+                    if self.start_button.text == "Start":
+                        self.start_button.set_text("Stop")
+                        self.env_thread.start()
+                    else:
+                        self.start_button.set_text("Start")
+                        self.env.running = False
+                        self.env_thread = threading.Thread(target=self.env.run)
 
+    def render(self):
         # Reuseable rendering functions:
         def display_text(text, pos):
             # Displays one line of text at position
@@ -76,21 +93,20 @@ class Interface():
             self.win,
             "gray",
             (self.env_size[0], 0),
-            (self.env_size[0], self.win_size[1])
-        )
+            (self.env_size[0], self.win_size[1]))
         pygame.draw.line(
             self.win,
             "gray",
             (self.env_size[0], self.net_win_size),
-            (self.win_size[0], self.net_win_size)
-        )
+            (self.win_size[0], self.net_win_size))
 
         # DISPLAY STATS
         fps_current = int(self.clock.get_fps())
         text = "fps: " + str(fps_current) + "   eif: " + str(int(self.env.iter_freq))
         display_text(text, (self.env_size[0] + 2, self.net_win_size + 2))
 
-        # TODO DRAW CONTROL BUTTONS
+        # DRAW CONTROL BUTTONS
+        self.manager.draw_ui(self.win)
 
         # DRAW AGENTS
         for e in self.env.physical:
@@ -155,7 +171,6 @@ class Interface():
                     coords[1] + np.array((self.env_size[0], 0)))
 
     def run(self):
-        self.setup()
         while self.running:
 
             # reset window to black
@@ -168,9 +183,10 @@ class Interface():
                 else:
                     self.handle(event)
 
+            delta = self.clock.tick(self.fps) / 1000.0
             self.render()
+            self.manager.update(delta)
             pygame.display.update()
-            self.clock.tick(self.fps)
 
 
 if __name__ == '__main__':

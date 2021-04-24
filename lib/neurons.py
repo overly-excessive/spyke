@@ -14,8 +14,6 @@ class Neuron():
         self.id = id
 
     def spike(self):
-        # TODO add time delay, because takes time for the spike to propagate
-        # along the axon
         # spike method called when the neuron fires
         # append a spike event to the network event queue
         self.network.event_queue.insert(self.network.clock + self.axon_lenght, self.id)
