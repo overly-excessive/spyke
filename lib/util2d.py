@@ -17,6 +17,7 @@ def divide_line(Apos, Bpos, n):
 
 
 # Only works with lists of form [time, id, next], these are referred to as events
+# TODO event queue is a misnomer, since i also use it for other payloads
 class EventQueue():
     def __init__(self):
         self.head = None

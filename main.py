@@ -19,7 +19,7 @@ class Interface():
         self.fps = 30
         self.selected_agent = -1    # -1 means none here
         self.displayed_agent = -1
-        self.env = Environment(self.env_size)
+        self.env = Environment(self.env_size, self)
         self.env_thread = threading.Thread(target=self.env.run)
         self.embedding = None
 
@@ -38,6 +38,21 @@ class Interface():
                 (self.env_size[0] + 10, self.net_win_size + 100),
                 (60, 30)),
             text='Start',
+            manager=self.manager)
+
+        self.speed_slider = pygame_gui.elements.ui_horizontal_slider.UIHorizontalSlider(
+            relative_rect=pygame.Rect(
+                (self.env_size[0] + 80, self.net_win_size + 100),
+                (300, 30)),
+            start_value=0,
+            value_range=(0, 100),
+            manager=self.manager)
+
+        self.show_spikes_button = pygame_gui.elements.ui_button.UIButton(
+            relative_rect=pygame.Rect(
+                (self.env_size[0] + 10, self.net_win_size + 140),
+                (60, 30)),
+            text="On",
             manager=self.manager)
 
     def quit(self):
@@ -79,6 +94,21 @@ class Interface():
                         self.env.running = False
                         self.env_thread = threading.Thread(target=self.env.run)
 
+                elif event.ui_element == self.show_spikes_button:
+                    if self.show_spikes_button.text == "On":
+                        self.show_spikes_button.set_text("Off")
+                        if self.embedding:
+                            self.embedding.spike_visualization = True
+                    else:
+                        self.show_spikes_button.set_text("On")
+                        if self.embedding:
+                            self.embedding.spike_visualization = False
+                            self.embedding.active_nodes[:] = 0
+
+            elif event.user_type == pygame_gui.UI_HORIZONTAL_SLIDER_MOVED:
+                if event.ui_element == self.speed_slider:
+                    self.env.target_freq = 1 + ((self.env.iter_freq - 1) / 100) * event.value
+
     def render(self):
         # Reuseable rendering functions:
         def display_text(text, pos):
@@ -102,7 +132,8 @@ class Interface():
 
         # DISPLAY STATS
         fps_current = int(self.clock.get_fps())
-        text = "fps: " + str(fps_current) + "   eif: " + str(int(self.env.iter_freq))
+        # TODO make this code look more reasonable, write dict display funct
+        text = "fps: " + str(fps_current) + "   ef: " + str(int(self.env.iter_freq)) + "   tf: " + str(int(self.env.target_freq))
         display_text(text, (self.env_size[0] + 2, self.net_win_size + 2))
 
         # DRAW CONTROL BUTTONS
@@ -135,32 +166,36 @@ class Interface():
             display_text("IN", (self.env_size[0] + 2, 2))
             display_text("OUT", (self.win_size[0] - 20, 2))
 
+            count = 0
+            s = Embedding.square_size
+
             # display inputs
             for pos in self.embedding.input_positions:
                 pygame.draw.rect(
                     self.win,
-                    "gray",
-                    (pos + np.array((self.env_size[0], 0)),
-                        (Embedding.square_size, Embedding.square_size)),
+                    "yellow" if self.embedding.active_nodes[count] else "gray",
+                    (pos + np.array((self.env_size[0] - s / 2, - s / 2)), (s, s)),
                     1)
+                count += 1
 
             # display outputs
             for pos in self.embedding.output_positions:
                 pygame.draw.rect(
                     self.win,
-                    "gray",
-                    (pos + np.array((self.env_size[0], 0)),
-                        (Embedding.square_size, Embedding.square_size)),
+                    "yellow" if self.embedding.active_nodes[count] else "gray",
+                    (pos + np.array((self.env_size[0] - s / 2, - s / 2)), (s, s)),
                     1)
+                count += 1
 
             # display neurons
             for pos in self.embedding.neuron_positions:
                 pygame.draw.circle(
                     self.win,
-                    "gray",
+                    "yellow" if self.embedding.active_nodes[count] else "gray",
                     pos + np.array((self.env_size[0], 0)),
                     Embedding.circle_radius,
                     1)
+                count += 1
 
             # display synapses
             for coords in self.embedding.synapse_positions:
@@ -169,6 +204,17 @@ class Interface():
                     "gray",
                     coords[0] + np.array((self.env_size[0], 0)),
                     coords[1] + np.array((self.env_size[0], 0)))
+
+            # display spikes, if spike visualization is on
+            if self.embedding and self.embedding.spike_visualization:
+                self.embedding.update_spikes()
+                while self.embedding.spike_positions.check(self.env.internal_clock):
+                    pos = self.embedding.spike_positions.get()
+                    pygame.draw.circle(
+                        self.win,
+                        "yellow",
+                        pos + np.array((self.env_size[0], 0)),
+                        Embedding.spike_radius)
 
     def run(self):
         while self.running:

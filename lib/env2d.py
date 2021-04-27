@@ -6,13 +6,15 @@ import time
 
 
 class Environment():
-    def __init__(self, size):
+    def __init__(self, size, iface):
         self.size = np.array(size)
+        self.iface = iface
         self.running = False
-        self.iter_freq = 0
-        self.target_freq = 30
+        self.iter_freq = 1
+        self.target_freq = 1
         self.physical = []
         self.agent_count = 0
+        self.internal_clock = 0
 
         # Initialize environment TODO make it possible to chose between different initial states
         self.add_agent("manual", np.array(self.size) / 2)
@@ -21,6 +23,7 @@ class Environment():
 
     # Advance to next iteration
     def next(self):
+        self.internal_clock += 1
 
         others = list(self.physical)
 
@@ -60,6 +63,7 @@ class Environment():
             period = time2 - time1
             self.iter_freq = 1 / period
             sleep_time = 1 / self.target_freq - period
+            sleep_time = sleep_time if sleep_time >= 0 else 0
             time.sleep(sleep_time)
             time1 = timer()
 

@@ -14,9 +14,6 @@ class Network():
 
         self.outputs = agent.actions
 
-        # For keeping internal time. Increment by one each iteration
-        self.clock = 0
-
         # TODO put this in some more suitable datastructure
         self.interneurons = []
 
@@ -32,8 +29,7 @@ class Network():
         self.connectome = np.zeros((self.neuron_count, self.neuron_count))
 
     def next(self):
-        self.clock += 1
-        while self.event_queue.check(self.clock):
+        while self.event_queue.check(self.agent.env.internal_clock):
             event = self.event_queue.get()
 
             # make event vector
