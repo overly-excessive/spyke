@@ -18,10 +18,11 @@ class Neuron():
         # append a spike event to the network event queue
         self.network.event_queue.insert(
             self.network.agent.env.internal_clock + self.axon_lenght, self.id)
-        if self.network.agent.env.iface.embedding:
-            if self.network.agent.env.iface.selected_agent == self.network.agent.id:
-                if self.network.agent.env.iface.embedding.spike_visualization:
-                    self.network.agent.env.iface.embedding.spike_queue.put(self.id)
+        # TODO spike tracking disabled
+        # if self.network.agent.env.iface.embedding:
+        #     if self.network.agent.env.iface.selected_agent == self.network.agent.id:
+        #         if self.network.agent.env.iface.embedding.spike_visualization:
+        #             self.network.agent.env.iface.embedding.spike_queue.put(self.id)
 
     def add_synapse(self):
         # TODO write this function

@@ -6,17 +6,16 @@ import time
 
 
 class Environment():
-    def __init__(self, size, iface):
-        self.size = np.array(size)
-        self.iface = iface
+    def __init__(self):
+        self.size = np.array((1300, 900))
         self.running = False
         self.iter_freq = 1
-        self.target_freq = 1
-        self.physical = []
+        self.target_freq = 50
+        self.agents = []
         self.agent_count = 0
         self.internal_clock = 0
 
-        # Initialize environment TODO make it possible to chose between different initial states
+        # Initialize environment TODO this initial state is only for testing
         self.add_agent("manual", np.array(self.size) / 2)
         for i in range(10):
             self.add_agent("autonomous")
@@ -25,9 +24,9 @@ class Environment():
     def next(self):
         self.internal_clock += 1
 
-        others = list(self.physical)
+        others = list(self.agents)
 
-        for entity in self.physical:
+        for entity in self.agents:
 
             # border collisions are fully inelastic,
             # if the wall is hit, normal component of the velocity vector disappears
@@ -51,7 +50,7 @@ class Environment():
                     entity.vel = v1 - np.dot(v1 - v2, pos_diff) / pow(d, 2) * pos_diff
                     entity2.vel = v2 - np.dot(v2 - v1, pos_diff) / pow(d, 2) * pos_diff
 
-        for entity in self.physical:
+        for entity in self.agents:
             entity.next()
 
     def run(self):
@@ -70,12 +69,14 @@ class Environment():
     def add_agent(self, type, position=None):
         # If position not supplied, put to random position
         if position is None:
-            position = np.array((random.uniform(10, self.size[0] - 10), random.uniform(10, self.size[1] - 10)))
+            position = np.array((
+                random.uniform(10, self.size[0] - 10),
+                random.uniform(10, self.size[1] - 10)))
 
         if type == "manual":
-            self.physical.append(Agent1(position, self))
+            self.agents.append(Agent1(position, self))
         elif type == "autonomous":
-            self.physical.append(Agent2(position, self))
+            self.agents.append(Agent2(position, self))
         else:
             raise ValueError
 

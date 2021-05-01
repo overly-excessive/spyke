@@ -26,7 +26,9 @@ class Embedding():
         self.output_positions = np.zeros((self.output_count, 2))
         self.neuron_positions = np.zeros((self.neuron_count, 2))
         self.synapse_positions = np.zeros((self.synapse_count, 2, 2))
-        self.active_nodes = np.zeros(self.input_count + self.output_count + self.neuron_count, dtype=bool)
+        self.active_nodes = np.zeros(
+            self.input_count + self.output_count + self.neuron_count,
+            dtype=bool)
         self.spike_positions = EventQueue()
         self.synapse_indices = {}
 
@@ -93,5 +95,7 @@ class Embedding():
                 spikes = divide_line(synapse_coords[0], synapse_coords[1], 10)
                 delay = 0
                 for spike in spikes:
-                    self.spike_positions.insert(self.network.agent.env.internal_clock + delay, spike)
+                    self.spike_positions.insert(
+                        self.network.agent.env.internal_clock + delay,
+                        spike)
                     delay += 1

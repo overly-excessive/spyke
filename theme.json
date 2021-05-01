@@ -1,0 +1,23 @@
+{
+  "defaults":
+  {
+    "colours":
+    {
+      "dark_bg":"#2c2c30"
+    }
+  },
+  "env_ctrl_win":
+  {
+    "misc":
+    {
+      "enable_close_button": "0"
+    }
+  },
+  "messages_win":
+  {
+    "misc":
+    {
+      "enable_close_button": "0"
+    }
+  }
+}

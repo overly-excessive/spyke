@@ -21,7 +21,7 @@ class Agent1():
         self.friction = 0.1
 
         self.radius = 10
-        self.color = "blue"
+        self.color = (129, 28, 190)
 
         self.actions = [self.move, self.turn_left, self.turn_right]
 
@@ -58,7 +58,7 @@ class Agent2(Agent1):
     def __init__(self, position, env):
         super().__init__(position, env)
         self.type = "autonomous"
-        self.color = "red"
+        self.color = (164, 80, 58)
 
         # Initialize network
         self.network = network.Network(self)

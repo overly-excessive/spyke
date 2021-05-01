@@ -18,13 +18,15 @@ class Network():
         self.interneurons = []
 
         # events are the ids of the neurons that spiked
-        # TODO add other things into the event later like, axon coordinates, maybe neurotransmitter type
+        # TODO add other things into the event later like, axon coordinates,
+        # maybe neurotransmitter type
         # TODO think about possible maxsize value
         # TODO check if maybe priority que is better for this
         self.event_queue = EventQueue()
 
-        # connectome matrix W where wij is the synnapse weight between ith pre-synaptic and jth post-synaptic neuron
-        # it is initialized with only the input and output neurons none of which are connected making the connectome an all zero matrix
+        # connectome matrix W where wij is the synnapse weight between ith pre-synaptic
+        # and jth post-synaptic neuron it is initialized with only the input and output
+        # neurons none of which are connected making the connectome an all zero matrix
         self.neuron_count = len(self.inputs) + len(self.outputs)
         self.connectome = np.zeros((self.neuron_count, self.neuron_count))
 
