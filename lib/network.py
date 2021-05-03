@@ -49,13 +49,13 @@ class Network():
             pass
 
         # check if any spikes happened this iteration, because otherwise nothing needs to be done
-        if not np.all(pre_synaptic_vector == 0):
+        if not np.all(pre_synaptic_vector is False):
             # Now send the pre-synaptic vector through the connectome matrix to get a
             # post-synaptic vector
             post_synaptic_vector = np.dot(self.connectome, pre_synaptic_vector)
             # TODO add a way of knowing for neurons which neuron excited them
-            if not np.all(post_synaptic_vector == 0):
-                excitations = np.nonzero(post_synaptic_vector)
+            if not np.all(post_synaptic_vector == 0.0):
+                excitations = np.nonzero(post_synaptic_vector)[0]
                 for i in excitations:
                     if i < self.neuron_count[1]:
                         self.outputs[i].excite()
@@ -64,6 +64,8 @@ class Network():
 
         # iteration of individual neurons
         # TODO setting for neuron iteration per network iteration. currently it is one
+        for neuron in self.inputs:
+            neuron.next()
         for neuron in self.interneurons:
             neuron.next()
 

@@ -271,7 +271,13 @@ class NetWin(DisplayWin):
         super().kill()
 
     def render(self):
-        pass
+        # brain cavity
+        pygame.draw.circle(
+            self.surface,
+            "gray",
+            (NetWin.surface_size[0] / 2, NetWin.surface_size[1] / 2),
+            NetWin.surface_size[0] / 2,
+            3)
 
 
 class StatsWin(pygame_gui.elements.ui_window.UIWindow):
