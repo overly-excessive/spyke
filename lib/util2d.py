@@ -16,33 +16,32 @@ def divide_line(Apos, Bpos, n):
     return result
 
 
-# Only works with lists of form [time, id, next], these are referred to as events
-# TODO event queue is a misnomer, since i also use it for other payloads
-class EventQueue():
+# Event queue with possibility of future events but may be useful for other things
+class FutureQueue():
     def __init__(self):
         self.head = None
 
-    # Insert event into the event queue
-    def insert(self, time, id):
-        event = [time, id, None]
+    # Insert event into the event queue at any point future or present
+    def insert(self, time, payload):
+        block = [time, payload, None]
         # if queue is empty, just add the event and return
         if not self.head:
-            self.head = event
+            self.head = block
             return
 
         # else, iterate to insertion position
         next = self.head
         previous = None
-        while next[2] and event[0] > next[0]:
+        while next[2] and block[0] > next[0]:
             previous = next
             next = next[2]
 
         # and insert event
         if not previous:
-            self.head = event
+            self.head = block
         else:
-            previous[2] = event
-        event[2] = next
+            previous[2] = block
+        block[2] = next
 
     # check if there is more events for supplied time
     def check(self, time):
@@ -52,6 +51,6 @@ class EventQueue():
 
     # get next event
     def get(self):
-        event = self.head
+        block = self.head
         self.head = self.head[2]
-        return event[1]
+        return block[1]

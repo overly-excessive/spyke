@@ -27,8 +27,10 @@ class Interface():
         self.running = True
 
         # Initialize GUI elements
-        self.env_control_win = gui.EnvControlWin(self, self.manager)
-        self.message_win = gui.MessageWin(self, self.manager)
+        self.env_control_win = gui.EnvControlWin(self)
+        self.message_win = gui.MessageWin(self)
+        self.stats_win = gui.StatsWin(self)
+        self.command_win = gui.CommandWin(self)
         self.env_win = None
         self.agent_win = None
         self.net_win = None
@@ -47,11 +49,11 @@ class Interface():
         if self.env_win is not None: return
         # TODO check which env is selected
 
-        self.env_win = gui.EnvWin(self, self.manager)
+        self.env_win = gui.EnvWin(self)
 
     def open_net_win(self, agent):
         if self.net_win is not None: return
-        self.net_win = gui.NetWin(self, self.manager, agent)
+        self.net_win = gui.NetWin(self, agent)
 
     def handle(self, event):
         self.manager.process_events(event)
@@ -89,12 +91,18 @@ class Interface():
                         if dist <= a.radius:
                             self.env_win.selected_agent = a.id
                             if self.agent_win: self.agent_win.kill()
-                            self.agent_win = gui.AgentWin(self, self.manager, a.id)
+                            self.agent_win = gui.AgentWin(self, a.id)
 
                     # if selection not changed, deselect
                     if self.env_win.selected_agent == old_select:
                         if self.agent_win: self.agent_win.kill()
                         self.env_win.selected_agent = None
+
+        # Handle keypresses
+        if event.type == pygame.KEYDOWN:
+            if event.key == pygame.K_RETURN:
+                self.command_win.text_entry.focus()
+                self.command_win.enter()
 
     def render(self):
         self.manager.draw_ui(self.win)

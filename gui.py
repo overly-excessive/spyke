@@ -5,13 +5,12 @@ from math import radians
 from threading import Thread
 
 from lib.env2d import Environment
-from lib.embedding import Embedding
 from lib.util2d import pol2cart
 # Gui Window Module Classes
 
 
 class EnvControlWin(pygame_gui.elements.ui_window.UIWindow):
-    def __init__(self, iface, manager):
+    def __init__(self, iface):
         # Static Variables
         self.iface = iface
         self.pos = (0, 0)
@@ -22,7 +21,7 @@ class EnvControlWin(pygame_gui.elements.ui_window.UIWindow):
         # Window Frame
         super().__init__(
             rect=pygame.Rect(self.pos, self.size),
-            manager=manager,
+            manager=iface.manager,
             window_display_title="Environment Control",
             object_id="env_ctrl_win")
 
@@ -34,7 +33,7 @@ class EnvControlWin(pygame_gui.elements.ui_window.UIWindow):
             relative_rect=pygame.Rect(
                 (iface.padding, iface.padding),
                 (self.dropdown_menu_width, iface.button_height)),
-            manager=manager,
+            manager=iface.manager,
             container=self)
 
         # Buttons
@@ -43,7 +42,7 @@ class EnvControlWin(pygame_gui.elements.ui_window.UIWindow):
                 (self.dropdown_menu_width + 2 * iface.padding, iface.padding),
                 (iface.button_width, iface.button_height)),
             text="New",
-            manager=manager,
+            manager=iface.manager,
             container=self)
 
         self.load_button = pygame_gui.elements.ui_button.UIButton(
@@ -51,7 +50,7 @@ class EnvControlWin(pygame_gui.elements.ui_window.UIWindow):
                 (self.dropdown_menu_width + iface.button_width + 3 * iface.padding, iface.padding),
                 (iface.button_width, iface.button_height)),
             text="Load",
-            manager=manager,
+            manager=iface.manager,
             container=self)
 
         self.save_button = pygame_gui.elements.ui_button.UIButton(
@@ -60,7 +59,7 @@ class EnvControlWin(pygame_gui.elements.ui_window.UIWindow):
                     iface.padding),
                 (iface.button_width, iface.button_height)),
             text="Save",
-            manager=manager,
+            manager=iface.manager,
             container=self)
 
         self.start_button = pygame_gui.elements.ui_button.UIButton(
@@ -69,7 +68,7 @@ class EnvControlWin(pygame_gui.elements.ui_window.UIWindow):
                     iface.padding),
                 (iface.button_width, iface.button_height)),
             text="Start",
-            manager=manager,
+            manager=iface.manager,
             container=self)
 
         # Speed Slider
@@ -80,7 +79,7 @@ class EnvControlWin(pygame_gui.elements.ui_window.UIWindow):
                 (self.speed_slider_width, iface.button_height)),
             start_value=10,
             value_range=(0, 100),
-            manager=manager,
+            manager=iface.manager,
             container=self)
 
     def handle(self, event):
@@ -112,21 +111,21 @@ class EnvControlWin(pygame_gui.elements.ui_window.UIWindow):
 
 
 class MessageWin(pygame_gui.elements.ui_window.UIWindow):
-    def __init__(self, iface, manager):
-        self.size = (800, 150)
+    def __init__(self, iface):
+        self.size = (iface.win_size[0] / 3, 150)
         self.pos = (0, iface.win_size[1] - self.size[1])
         super().__init__(
             rect=pygame.Rect(self.pos, self.size),
             window_display_title="Messages",
             object_id="messages_win",
-            manager=manager)
+            manager=iface.manager)
         # TODO finish message window
 
 
 class DisplayWin(pygame_gui.elements.ui_window.UIWindow):
     # Parent class of windows that display a dinamically changing surface
     # Not meant to be instantiated on its own
-    def __init__(self, size, pos, surface_size, iface, manager, title):
+    def __init__(self, size, pos, surface_size, iface, title):
         self.iface = iface
         self.size = size
         self.pos = pos
@@ -135,7 +134,7 @@ class DisplayWin(pygame_gui.elements.ui_window.UIWindow):
         super().__init__(
             rect=pygame.Rect(self.pos, self.size),
             window_display_title=title,
-            manager=manager,
+            manager=iface.manager,
             resizable=True)
 
         # display surface size
@@ -148,7 +147,7 @@ class DisplayWin(pygame_gui.elements.ui_window.UIWindow):
         self.display = pygame_gui.elements.ui_image.UIImage(
             relative_rect=pygame.Rect((0, 0), (self.get_container().get_size())),
             image_surface=self.surface,
-            manager=manager,
+            manager=iface.manager,
             container=self,
             anchors={'left': 'left', 'right': 'right', 'top': 'top', 'bottom': 'bottom'})
 
@@ -180,7 +179,7 @@ class DisplayWin(pygame_gui.elements.ui_window.UIWindow):
 
 
 class EnvWin(DisplayWin):
-    def __init__(self, iface, manager):
+    def __init__(self, iface):
         self.iface = iface
         # Create environment model object  # TODO add ability to load one from memory
         self.env = Environment()
@@ -195,7 +194,7 @@ class EnvWin(DisplayWin):
         self.pos = (0, iface.env_control_win.size[1])
 
         # Initialize display window (parent class)
-        super().__init__(self.size, self.pos, self.env.size, iface, manager, "Environment")
+        super().__init__(self.size, self.pos, self.env.size, iface, "Environment")
 
     def render(self):
         # reset window to background color
@@ -223,7 +222,7 @@ class EnvWin(DisplayWin):
 
 
 class AgentWin(pygame_gui.elements.ui_window.UIWindow):
-    def __init__(self, iface, manager, id):
+    def __init__(self, iface, id):
         self.iface = iface
         self.agent = iface.env_win.env.agents[id]
         self.size = (
@@ -232,7 +231,7 @@ class AgentWin(pygame_gui.elements.ui_window.UIWindow):
         self.pos = (iface.env_control_win.size[0], 0)
         super().__init__(
             rect=pygame.Rect(self.pos, self.size),
-            manager=manager,
+            manager=iface.manager,
             window_display_title="Agent id: " + str(id))
 
         # Gui elements
@@ -241,7 +240,7 @@ class AgentWin(pygame_gui.elements.ui_window.UIWindow):
                 (iface.padding, iface.padding),
                 (iface.button_width, iface.button_height)),
             text="Show",
-            manager=manager,
+            manager=iface.manager,
             container=self)
 
         self.save_button = pygame_gui.elements.ui_button.UIButton(
@@ -249,22 +248,23 @@ class AgentWin(pygame_gui.elements.ui_window.UIWindow):
                 (iface.button_width + 2 * iface.padding, iface.padding),
                 (iface.button_width, iface.button_height)),
             text="Save",
-            manager=manager,
+            manager=iface.manager,
             container=self)
 
 
 class NetWin(DisplayWin):
     surface_size = (500, 500)
 
-    def __init__(self, iface, manager, agent):
+    def __init__(self, iface, agent):
         self.iface = iface
         self.pos = (iface.env_control_win.size[0] + iface.agent_win.size[0],
                     iface.env_control_win.size[1])
         self.size = (iface.env_win.size[1] - 24, iface.env_win.size[1])
-        super().__init__(self.size, self.pos, NetWin.surface_size, iface, manager, "Network")
+        super().__init__(self.size, self.pos, NetWin.surface_size, iface, "Network")
 
         self.agent = agent
-        self.embedding = Embedding(self.agent.network, NetWin.surface_size)
+        # TODO generate embedding
+        # self.embedding = Embedding(self.agent.network, NetWin.surface_size)
 
     def kill(self):
         self.iface.net_win = None
@@ -272,3 +272,51 @@ class NetWin(DisplayWin):
 
     def render(self):
         pass
+
+
+class StatsWin(pygame_gui.elements.ui_window.UIWindow):
+    def __init__(self, iface):
+        self.iface = iface
+        self.pos = (iface.message_win.size[0],
+                    iface.win_size[1] - iface.message_win.size[1])
+        self.size = (iface.win_size[0] / 3, iface.message_win.size[1])
+        super().__init__(
+            rect=pygame.Rect(self.pos, self.size),
+            manager=iface.manager,
+            window_display_title="Stats")
+
+
+class CommandWin(pygame_gui.elements.ui_window.UIWindow):
+    def __init__(self, iface):
+        self.iface = iface
+        self.pos = (iface.message_win.size[0] + iface.stats_win.size[0],
+                    iface.win_size[1] - iface.message_win.size[1])
+        self.size = (iface.win_size[0] / 3,
+                     iface.message_win.size[1])
+        super().__init__(
+            rect=pygame.Rect(self.pos, self.size),
+            manager=iface.manager,
+            window_display_title="Command Prompt")
+
+        # Gui elements
+        self.text_entry = pygame_gui.elements.ui_text_entry_line.UITextEntryLine(
+            relative_rect=pygame.Rect(
+                (0, 1 - iface.button_height),
+                (self.get_container().get_size()[0], iface.button_height)),
+            manager=iface.manager,
+            container=self,
+            anchors={"left": "left",
+                     "right": "left",
+                     "top": "bottom",
+                     "bottom": "bottom"})
+
+    def enter(self):
+        entry = self.text_entry.get_text()
+        if entry == "": return
+        self.text_entry.set_text("")
+        if entry == "t":
+            # t sets up the app for testing the current thing im testing
+            self.iface.env_win = EnvWin(self.iface)
+            self.iface.env_win.selected_agent = 1
+            self.iface.agent_win = AgentWin(self.iface, self.iface.env_win.selected_agent)
+            self.iface.net_win = NetWin(self.iface, self.iface.agent_win.agent)
