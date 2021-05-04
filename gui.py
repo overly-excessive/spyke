@@ -6,6 +6,7 @@ from threading import Thread
 
 from lib.env2d import Environment
 from lib.util2d import pol2cart
+from lib.embedding import Embedding
 # Gui Window Module Classes
 
 
@@ -263,21 +264,14 @@ class NetWin(DisplayWin):
         super().__init__(self.size, self.pos, NetWin.surface_size, iface, "Network")
 
         self.agent = agent
-        # TODO generate embedding
-        # self.embedding = Embedding(self.agent.network, NetWin.surface_size)
+        self.embedding = Embedding(agent.network, self.surface)
 
     def kill(self):
         self.iface.net_win = None
         super().kill()
 
     def render(self):
-        # brain cavity
-        pygame.draw.circle(
-            self.surface,
-            "gray",
-            (NetWin.surface_size[0] / 2, NetWin.surface_size[1] / 2),
-            NetWin.surface_size[0] / 2,
-            3)
+        self.surface = self.embedding.surface
 
 
 class StatsWin(pygame_gui.elements.ui_window.UIWindow):

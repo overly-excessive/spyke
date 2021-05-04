@@ -16,41 +16,7 @@ def divide_line(Apos, Bpos, n):
     return result
 
 
-# Event queue with possibility of future events but may be useful for other things
-class FutureQueue():
-    def __init__(self):
-        self.head = None
-
-    # Insert event into the event queue at any point future or present
-    def insert(self, time, payload):
-        block = [time, payload, None]
-        # if queue is empty, just add the event and return
-        if not self.head:
-            self.head = block
-            return
-
-        # else, iterate to insertion position
-        next = self.head
-        previous = None
-        while next[2] and block[0] > next[0]:
-            previous = next
-            next = next[2]
-
-        # and insert event
-        if not previous:
-            self.head = block
-        else:
-            previous[2] = block
-        block[2] = next
-
-    # check if there is more events for supplied time
-    def check(self, time):
-        if not self.head: return False
-        if self.head[0] == time: return True
-        else: return False
-
-    # get next event
-    def get(self):
-        block = self.head
-        self.head = self.head[2]
-        return block[1]
+def rotate(vec, alpha):
+    rot = np.array([[np.cos(alpha), -np.sin(alpha)],
+                    [np.sin(alpha), np.cos(alpha)]])
+    return np.dot(rot, vec)
