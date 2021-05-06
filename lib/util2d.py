@@ -17,6 +17,6 @@ def divide_line(Apos, Bpos, n):
 
 
 def rotate(vec, alpha):
-    rot = np.array([[np.cos(alpha), -np.sin(alpha)],
+    Mrot = np.array([[np.cos(alpha), -np.sin(alpha)],
                     [np.sin(alpha), np.cos(alpha)]])
-    return np.dot(rot, vec)
+    return np.dot(Mrot, vec)

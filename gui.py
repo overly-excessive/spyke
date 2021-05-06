@@ -265,6 +265,8 @@ class NetWin(DisplayWin):
 
         self.agent = agent
         self.embedding = Embedding(agent.network, self.surface)
+        self.embedding.compute()
+        self.embedding.draw()
 
     def kill(self):
         self.iface.net_win = None
@@ -272,6 +274,7 @@ class NetWin(DisplayWin):
 
     def render(self):
         self.surface = self.embedding.surface
+        # TODO redraw embedding when anything changes
 
 
 class StatsWin(pygame_gui.elements.ui_window.UIWindow):

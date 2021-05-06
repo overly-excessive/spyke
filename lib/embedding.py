@@ -2,7 +2,7 @@ import numpy as np
 import pygame
 
 from . import network
-from .util2d import rotate
+from .util2d import rotate, divide_line
 
 
 # Object that generates a 2D representation of a network
@@ -20,30 +20,38 @@ class Embedding():
         self.surface = surface.copy()
         self.size = surface.get_size()
 
+        self.input_positions = np.zeros((self.network.neuron_count[0], 2))
+        self.output_positions = np.zeros((self.network.neuron_count[1], 2))
+        self.neuron_positions = np.zeros((self.network.neuron_count[2], 2))
+        self.dendrite_count = np.count_nonzero(self.network.connectome)
+        self.dendrite_positions = np.zeros((self.dendrite_count, 2, 2))
+
         top = np.array((self.size[0] / 2, 0))
         center = np.array(self.size) / 2
 
-        # TODO save input and output positions to an instance variable
-
-        # draw the inputs on the surface:
+        # draw the inputs on the surface, while saving their positions:
         arc = np.pi / (self.network.neuron_count[0] + 1)
-        for i, neuron in zip(range(self.network.neuron_count[0]), self.network.inputs):
+        for i in range(self.network.neuron_count[0]):
             rot = (i + 1) * arc + np.pi / 2
+            pos = rotate(top, rot) + center
             pygame.draw.circle(
                 self.surface,
                 Embedding.input_color,
-                rotate(top, rot) + center,
+                pos,
                 Embedding.neuron_radius)
+            self.input_positions[i] = pos
 
         # draw outputs
         arc = np.pi / (self.network.neuron_count[1] + 1)
-        for i, neuron in zip(range(self.network.neuron_count[1]), self.network.outputs):
+        for i in range(self.network.neuron_count[1]):
             rot = -(i + 1) * arc + np.pi / 2
+            pos = rotate(top, rot) + center
             pygame.draw.circle(
                 self.surface,
                 Embedding.output_color,
-                rotate(top, rot) + center,
+                pos,
                 Embedding.neuron_radius)
+            self.output_positions[i] = pos
 
         # brain cavity
         pygame.draw.circle(
@@ -52,3 +60,29 @@ class Embedding():
             (self.size[0] // 2, self.size[1] // 2),
             self.size[0],
             self.size[0] // 2)
+
+        # The surface in its curent state is the background to every future render, therefore it is
+        # saved into an instance variable so it does not need to be drawn more than this one time
+        self.cavity = self.surface.copy()
+
+    def compute(self):
+        # neuron positions
+        # TODO for now they are in a straight line down the middle
+        # but other topologies should be possible
+        self.neuron_positions = divide_line(
+            np.array((self.size[0] / 2, 0)),
+            np.array((self.size[0] / 2, self.size[1])),
+            self.network.neuron_count[2])
+
+    def draw(self):
+        # Draw the current state of the network embedding onto the surface
+        self.sufrace = self.cavity.copy()   # reset to background
+
+        # draw neurons
+        for pos in self.neuron_positions:
+            pygame.draw.circle(
+                self.surface,
+                "gray",
+                pos,
+                Embedding.neuron_radius,
+                1)

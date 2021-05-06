@@ -27,8 +27,8 @@ class Network():
         self.future_queue = []
         heapq.heapify(self.future_queue)
 
-        # connectome matrix W where wij is the synnapse weight between ith pre-synaptic
-        # and jth post-synaptic neuron it is initialized with only the input and output
+        # connectome matrix W where wij is the synnapse weight between ith post-synaptic
+        # and jth pre-synaptic neuron it is initialized with only the input and output
         # neurons none of which are connected making the connectome an all zero matrix
         self.connectome = np.zeros((self.neuron_count[1] + self.neuron_count[2],
                                     self.neuron_count[0] + self.neuron_count[2]))
@@ -69,18 +69,25 @@ class Network():
         for neuron in self.interneurons:
             neuron.next()
 
-    def add_neuron(self):
-        # TODO this only adds random neurons for the moment, make it work with other types
-        n = neurons.Neuron_random(self)
-        self.inputs.append(n)
-        if n.type == "input":
+    def add_neuron(self, neuron):
+        if neuron.type == "input":
+            self.inputs.append(neuron)
             self.connectome = np.c_[np.zeros(self.connectome.shape[0]), self.connectome]
+        if neuron.type == "output":
+            self.outputs.append(neuron)
+            # TODO extend connectome and connect output to action
+        if neuron.type == "inter":
+            self.interneurons.append(neuron)
+            # TODO extend connectome
 
     # TODO add ability to load saved network from file
     def load_network(self):
         # this is just for testing TODO rewrite this completely
         for i in range(3):
-            self.add_neuron()
+            self.add_neuron(neurons.Neuron_random(self))
         self.connectome[0, 0] = 1
         self.connectome[1, 1] = 1
         self.connectome[2, 2] = 1
+
+        for i in range(3):
+            self.add_neuron(neurons.Neuron_LIF(self))

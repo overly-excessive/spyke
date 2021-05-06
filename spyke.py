@@ -104,9 +104,6 @@ class Interface():
                 self.command_win.text_entry.focus()
                 self.command_win.enter()
 
-    def render(self):
-        self.manager.draw_ui(self.win)
-
     def run(self):
         while self.running:
 
@@ -122,7 +119,7 @@ class Interface():
                     self.handle(event)
 
             # render, set fps and update screen
-            self.render()
+            self.manager.draw_ui(self.win)
             delta = self.clock.tick(self.fps) / 1000.0
             pygame.display.update()
             self.manager.update(delta)

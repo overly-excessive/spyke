@@ -70,22 +70,23 @@ class Neuron(NeuronBase):
 
 class Neuron_LIF(Neuron):
     # Leaky Integrate and fire Neuron
-    def __init__(self, network, id):
-        super().__init__(network, id)
+    def __init__(self, network):
+        super().__init__(network)
 
         # parameters
-        self.neuron_count += 1
-
         self.threshold = 1.0
-        self.leak = 0.01
+        self.leak = 0.1
 
         # state
         self.activation = 0.0
 
     def next(self):
-        if self.activtion >= self.threshold:
+        if self.activation >= self.threshold:
             self.spike()
             self.activation = 0.0
+        elif self.activation > 0.0:
+            self.activation = self.activation * (1 - self.leak)
+        else: self.activation = 0.0
 
     def excite(self, value):
         self.activation += value
