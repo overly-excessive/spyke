@@ -7,9 +7,9 @@ from threading import Thread
 from lib.env2d import Environment
 from lib.util2d import pol2cart
 from lib.embedding import Embedding
+
+
 # Gui Window Module Classes
-
-
 class EnvControlWin(pygame_gui.elements.ui_window.UIWindow):
     def __init__(self, iface):
         # Static Variables
@@ -99,6 +99,7 @@ class EnvControlWin(pygame_gui.elements.ui_window.UIWindow):
                 if self.start_button.text == "Start":
                     self.start_button.set_text("Stop")
                     self.iface.env_win.env_thread.start()
+                    # TODO do nothing and output error message if environment isnt loaded
                 else:
                     self.start_button.set_text("Start")
                     self.iface.env_win.env.running = False

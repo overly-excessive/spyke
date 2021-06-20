@@ -11,6 +11,7 @@ class Embedding():
     input_color = (93, 147, 181)  # kinda blue
     output_color = (70, 180, 78)  # kinda green
     node_color = (121, 149, 117)  # light gray
+    axon_color = (185, 144, 89)   # pale orange
     spike_color = (228, 221, 52)  # bright yellow
     neuron_radius = 8   # circles represent neurons
     spike_radius = 3    # smaller circles represent spikes
@@ -74,15 +75,29 @@ class Embedding():
             np.array((self.size[0] / 2, self.size[1])),
             self.network.neuron_count[2])
 
+    def draw_neuron(self, neuron, pos):
+        axon_scale = 20
+
+        # draw soma
+        pygame.draw.circle(
+            self.surface,
+            Embedding.node_color,
+            (pos[0] - neuron.axon_lenght * axon_scale / 2, pos[1]),
+            Embedding.neuron_radius,
+            2)
+
+        # draw axon
+        pygame.draw.line(
+            self.surface,
+            Embedding.axon_color,
+            (pos[0] - neuron.axon_lenght * axon_scale / 2, pos[1]),
+            (pos[0] + neuron.axon_lenght * axon_scale / 2, pos[1]),
+            2)
+
     def draw(self):
         # Draw the current state of the network embedding onto the surface
         self.sufrace = self.cavity.copy()   # reset to background
 
         # draw neurons
-        for pos in self.neuron_positions:
-            pygame.draw.circle(
-                self.surface,
-                "gray",
-                pos,
-                Embedding.neuron_radius,
-                1)
+        for i, pos in zip(range(self.network.neuron_count[2]), self.neuron_positions):
+            self.draw_neuron(self.network.interneurons[i], pos)
