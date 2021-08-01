@@ -9,6 +9,7 @@ class Network():
         # a refference to the agent object controlled by the network
         self.agent = agent
         self.neuron_count = [0, 0, 0]  # input, output and interneurons respectively
+        # the neuron count is accessed and incremented by the neuron init function
 
         # TODO add sensory neurons
         self.inputs = []
@@ -35,7 +36,7 @@ class Network():
 
     def next(self):
         # Create an event vector from all the neurons that spiked
-        pre_synaptic_vector = np.zeros((self.connectome.shape[0]), dtype=bool)
+        pre_synaptic_vector = np.zeros((self.connectome.shape[1]), dtype=bool)
 
         # Fetch all events for current iteration from the future queue and add them to the vector
         try:
@@ -72,16 +73,24 @@ class Network():
     def add_neuron(self, neuron):
         if neuron.type == "input":
             self.inputs.append(neuron)
-            self.connectome = np.c_[np.zeros(self.connectome.shape[0]), self.connectome]
+            self.connectome = np.hstack((self.connectome[:, 0:len(self.inputs)],
+                                        np.zeros(self.connectome.shape[0])[:, None],
+                                        self.connectome[:, len(self.inputs):]))
         if neuron.type == "output":
             self.outputs.append(neuron)
-            # TODO extend connectome and connect output to action
+            self.connectome = np.vstack((self.connectome[0:len(self.outputs), :],
+                                        np.zeros(self.connectome.shape[1]),
+                                        self.connectome[len(self.outputs):, :]))
         if neuron.type == "inter":
             self.interneurons.append(neuron)
-            # TODO extend connectome
+            self.connectome = np.hstack((self.connectome,
+                                        np.zeros(self.connectome.shape[0])[:, None]))
+            self.connectome = np.vstack((self.connectome, np.zeros(self.connectome.shape[1])))
 
     # TODO add ability to load saved network from file
     def load_network(self):
+        # load network state from file
+
         # this is just for testing TODO rewrite this completely
         for i in range(3):
             self.add_neuron(neurons.Neuron_random(self))
@@ -89,5 +98,9 @@ class Network():
         self.connectome[1, 1] = 1
         self.connectome[2, 2] = 1
 
-        for i in range(3):
+        for i in range(4):
             self.add_neuron(neurons.Neuron_LIF(self))
+
+    def save_network(self):
+        # save network state to file
+        pass
