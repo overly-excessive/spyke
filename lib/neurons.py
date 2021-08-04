@@ -29,7 +29,13 @@ class InputNeuron(NeuronBase):
     def spike(self):
         heapq.heappush(
             self.network.future_queue,
-            [self.network.agent.env.internal_clock + 1, self.id])
+            (self.network.agent.env.internal_clock + 1, self.id))
+
+        # Spike tracking
+        if self.network.spike_tracking:
+            heapq.heappush(
+                self.network.recording,
+                (self.network.agent.env.internal_clock + 1, 0, self.id))
 
 
 class OutputNeuron(NeuronBase):
@@ -52,13 +58,13 @@ class Neuron(NeuronBase):
         # push a spike event to the network event heap
         heapq.heappush(
             self.network.future_queue,
-            [self.network.agent.env.internal_clock + 1, self.id])
+            (self.network.agent.env.internal_clock + self.axon_lenght, self.id))
 
-        # TODO spike tracking disabled
-        # if self.network.agent.env.iface.embedding:
-        #     if self.network.agent.env.iface.selected_agent == self.network.agent.id:
-        #         if self.network.agent.env.iface.embedding.spike_visualization:
-        #             self.network.agent.env.iface.embedding.spike_queue.put(self.id)
+        # Spike tracking
+        if self.network.spike_tracking:
+            heapq.heappush(
+                self.network.recording,
+                (self.network.agent.env.internal_clock + 1, self.axon_lenght, self.id))
 
     def excite(self, value):
         pass
@@ -93,7 +99,7 @@ class Neuron_LIF(Neuron):
 
 
 class Neuron_random(InputNeuron):
-    # Neuron that spikes at random times
+    # Neuron that spikes at random times, handled as a type of input neuron
     def __init__(self, network):
         super().__init__(network)
 

@@ -153,7 +153,18 @@ class DisplayWin(pygame_gui.elements.ui_window.UIWindow):
             container=self,
             anchors={'left': 'left', 'right': 'right', 'top': 'top', 'bottom': 'bottom'})
 
-        # TODO add header buttons
+        # Expand button on header
+        self.expand_button = pygame_gui.elements.ui_button.UIButton(
+            relative_rect=pygame.Rect((-2 * self.title_bar_close_button_width, 0),
+                                      (self.title_bar_close_button_width, self.title_bar_height)),
+            text="↗",
+            manager=iface.manager,
+            container=self._window_root_container,
+            starting_height=2,
+            anchors={'top': 'top',
+                     'bottom': 'top',
+                     'left': 'right',
+                     'right': 'right'})
 
     def render(self):
         # placeholder to be overriden by child classes
@@ -256,12 +267,14 @@ class AgentWin(pygame_gui.elements.ui_window.UIWindow):
 
 class NetWin(DisplayWin):
     surface_size = (500, 500)
+    spikes_button_size = 25
 
     def __init__(self, iface, agent):
         self.iface = iface
         self.pos = (iface.env_control_win.size[0] + iface.agent_win.size[0],
                     iface.env_control_win.size[1])
         self.size = (iface.env_win.size[1] - 24, iface.env_win.size[1])
+
         super().__init__(self.size, self.pos, NetWin.surface_size, iface, "Network")
 
         self.agent = agent
@@ -269,13 +282,45 @@ class NetWin(DisplayWin):
         self.embedding.compute()
         self.embedding.draw()
 
+        # Spikes button
+        self.spike_tracking = False
+        self.spikes_button = pygame_gui.elements.ui_button.UIButton(
+            relative_rect=pygame.Rect(
+                (-3 * self.title_bar_close_button_width, 0),
+                (self.title_bar_close_button_width, self.title_bar_height)),
+            text="s",
+            manager=iface.manager,
+            container=self._window_root_container,
+            starting_height=2,
+            object_id="spikes_button",
+            anchors={'top': 'top',
+                     'bottom': 'top',
+                     'left': 'right',
+                     'right': 'right'})
+
     def kill(self):
         self.iface.net_win = None
         super().kill()
 
     def render(self):
-        self.surface = self.embedding.surface
-        # TODO redraw embedding when anything changes
+        self.surface = self.embedding.surface.copy()
+        if self.spike_tracking:
+            self.embedding.draw_spikes()
+            self.surface.blit(self.embedding.spike_vis_overlay, (0, 0))
+
+    def toggle_spikes(self):
+        if not self.spike_tracking:
+            self.spike_tracking = True
+            self.agent.network.spike_tracking = True
+            self.spikes_button.colours["normal_bg"] = pygame.Color("yellow")
+            self.spikes_button.rebuild()
+        else:
+            self.spike_tracking = False
+            self.agent.network.spike_tracking = False
+            self.spikes_button.colours["normal_bg"] = self.ui_theme.get_colour_or_gradient(
+                'normal_bg',
+                self.combined_element_ids)
+            self.spikes_button.rebuild()
 
 
 class StatsWin(pygame_gui.elements.ui_window.UIWindow):

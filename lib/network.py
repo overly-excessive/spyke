@@ -34,6 +34,12 @@ class Network():
         self.connectome = np.zeros((self.neuron_count[1] + self.neuron_count[2],
                                     self.neuron_count[0] + self.neuron_count[2]))
 
+        # A flag if the network is being recorded
+        self.spike_tracking = False
+        # Another queue for spike tracking
+        self.recording = []
+        heapq.heapify(self.recording)
+
     def next(self):
         # Create an event vector from all the neurons that spiked
         pre_synaptic_vector = np.zeros((self.connectome.shape[1]), dtype=bool)
@@ -94,7 +100,7 @@ class Network():
         # this is just for testing TODO rewrite this completely
         for i in range(3):
             self.add_neuron(neurons.Neuron_random(self))
-        self.connectome[0, 0] = 1
+        # self.connectome[0, 0] = 1
         self.connectome[1, 1] = 1
         self.connectome[2, 2] = 1
 

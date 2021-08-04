@@ -66,11 +66,17 @@ class Interface():
                 if event.ui_element.ui_container == self.env_control_win.get_container():
                     self.env_control_win.handle(event)
 
-                elif self.agent_win:
+                if self.agent_win:
                     if event.ui_element.ui_container == self.agent_win.get_container():
                         if event.user_type == pygame_gui.UI_BUTTON_PRESSED:
                             if event.ui_element == self.agent_win.show_button:
                                 self.open_net_win(self.agent_win.agent)
+
+                if self.net_win:
+                    if event.ui_element.ui_container == self.net_win._window_root_container:
+                        if event.user_type == pygame_gui.UI_BUTTON_PRESSED:
+                            if event.ui_element == self.net_win.spikes_button:
+                                self.net_win.toggle_spikes()
 
         # Handle Mouse Events
         elif event.type == pygame.MOUSEBUTTONDOWN:

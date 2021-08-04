@@ -24,8 +24,8 @@ class Environment():
     def next(self):
         self.internal_clock += 1
 
+        # Physics - collision
         others = list(self.agents)
-
         for entity in self.agents:
 
             # border collisions are fully inelastic,
@@ -50,7 +50,6 @@ class Environment():
                     entity.vel = v1 - np.dot(v1 - v2, pos_diff) / pow(d, 2) * pos_diff
                     entity2.vel = v2 - np.dot(v2 - v1, pos_diff) / pow(d, 2) * pos_diff
 
-        for entity in self.agents:
             entity.next()
 
     def run(self):

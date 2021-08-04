@@ -1,5 +1,6 @@
 import numpy as np
 import pygame
+import heapq
 
 from . import network
 from .util2d import rotate, divide_line
@@ -16,6 +17,7 @@ class Embedding():
     spike_color = (228, 221, 52)  # bright yellow
     neuron_radius = 8   # circles represent neurons
     spike_radius = 3    # smaller circles represent spikes
+    flash_duration = 5  # if a pointlike event occurs, its representation lasts this many frames
 
     def __init__(self, net: network.Network, surface, type="line"):
         self.type = type
@@ -29,6 +31,12 @@ class Embedding():
         self.dendrite_count = np.count_nonzero(self.network.connectome)
         self.dendrite_positions = np.zeros((self.dendrite_count, 2, 2))
         # (dendrite id, input/output end, x/y coordinate)
+
+        # An extra transparent surface to draw spikes on a separate layer
+        self.spike_vis_overlay = pygame.Surface(self.size, pygame.SRCALPHA)
+        # Storage list for spike events in progress. The events are of the form:
+        # [start of event, end of event, type: "d"endrite/"a"xon, dendrite id/neuron id]
+        self.spikes_in_progress = []
 
         top = np.array((self.size[0] / 2, 0))
         center = np.array(self.size) / 2
@@ -150,4 +158,42 @@ class Embedding():
                 Embedding.dendrite_color,
                 pos[0],
                 pos[1],
+                1)
+
+    def find_dendrite(self):
+        pass
+
+    def draw_spikes(self):
+        self.spike_vis_overlay = pygame.Surface(self.size, pygame.SRCALPHA)
+
+        # every iteration, check the recording queue and register all events that happened
+        # the events will be stored in the list self.spikes_in_progress in the format:
+        # [start of event, end of event, type: "d"endrite/"a"xon, dendrite id/neuron id]
+        try:
+            event = heapq.heappop(self.network.recording)
+            # if event is a dendrite flash
+            if not event[1]:
+                # if the flash is from an input neuron
+                if event[2][0] == 0:
+                    self.spikes_in_progress.append([
+                        event[0],
+                        event[0] + Embedding.flash_duration,
+                        "d",
+                        event[2][1]])  # TODO the dendrite id is only equal to neuron id in some
+                                # very specific circumstances, this code needs to be generalized
+
+        except IndexError:
+            pass
+
+        # Remove spent events from list
+        self.spikes_in_progress = [x for x in self.spikes_in_progress if
+                                   x[1] > self.network.agent.env.internal_clock]
+
+        # Draw
+        for event in self.spikes_in_progress:
+            pygame.draw.line(
+                self.spike_vis_overlay,
+                Embedding.spike_color,
+                self.dendrite_positions[event[3], 0],
+                self.dendrite_positions[event[3], 1],
                 1)
