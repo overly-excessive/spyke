@@ -31,6 +31,8 @@ class Embedding():
         self.dendrite_count = np.count_nonzero(self.network.connectome)
         self.dendrite_positions = np.zeros((self.dendrite_count, 2, 2))
         # (dendrite id, input/output end, x/y coordinate)
+        self.dendrite_lookup_dict = {}
+        # this is for easily finding dendrite ids based on neuron ids
 
         # An extra transparent surface to draw spikes on a separate layer
         self.spike_vis_overlay = pygame.Surface(self.size, pygame.SRCALPHA)
@@ -44,7 +46,7 @@ class Embedding():
         # draw the inputs on the surface, while saving their positions:
         arc = np.pi / (self.network.neuron_count[0] + 1)
         for i in range(self.network.neuron_count[0]):
-            rot = (i + 1) * arc + np.pi / 2
+            rot = -(i + 1) * arc - np.pi / 2
             pos = rotate(top, rot) + center
             pygame.draw.circle(
                 self.surface,
@@ -56,7 +58,7 @@ class Embedding():
         # draw outputs
         arc = np.pi / (self.network.neuron_count[1] + 1)
         for i in range(self.network.neuron_count[1]):
-            rot = -(i + 1) * arc + np.pi / 2
+            rot = (i + 1) * arc - np.pi / 2
             pos = rotate(top, rot) + center
             pygame.draw.circle(
                 self.surface,
@@ -94,8 +96,8 @@ class Embedding():
     def compute_neuron_positions(self):
         if self.type == "line":
             self.neuron_positions = divide_line(
-                np.array((self.size[0] / 2, 0)),
-                np.array((self.size[0] / 2, self.size[1])),
+                np.array((self.size[0] / 2 - 100, 0)),
+                np.array((self.size[0] / 2 - 100, self.size[1])),
                 self.network.neuron_count[2])
         else:
             pass
@@ -107,6 +109,8 @@ class Embedding():
 
         dendrite_id = 0  # keep track, increment when dendrite computed
 
+        # TODO following for loops can be merged
+
         # INPUT to OUTPUT dendrites:
         for ip in range(self.network.neuron_count[0]):
             for op in range(self.network.neuron_count[1]):
@@ -116,7 +120,44 @@ class Embedding():
                     pos1, pos2 = Embedding.shorten_synapse(pos1, pos2, "both")
                     self.dendrite_positions[dendrite_id, 0, :] = pos1
                     self.dendrite_positions[dendrite_id, 1, :] = pos2
+                    if (0, ip) in self.dendrite_lookup_dict:
+                        self.dendrite_lookup_dict[(0, ip)].append(dendrite_id)
+                    else:
+                        self.dendrite_lookup_dict[(0, ip)] = [dendrite_id]
                     dendrite_id += 1
+
+        # INPUT to INTERNEURON dendrites:
+        for ip in range(self.network.neuron_count[0]):
+            for inter in range(self.network.neuron_count[2]):
+                if self.network.connectome[inter + self.network.neuron_count[1], ip]:
+                    pos1 = self.input_positions[ip, :]
+                    pos2 = self.neuron_positions[inter, :]
+                    pos1, pos2 = Embedding.shorten_synapse(pos1, pos2, "both")
+                    self.dendrite_positions[dendrite_id, 0, :] = pos1
+                    self.dendrite_positions[dendrite_id, 1, :] = pos2
+                    if (0, ip) in self.dendrite_lookup_dict:
+                        self.dendrite_lookup_dict[(0, ip)].append(dendrite_id)
+                    else:
+                        self.dendrite_lookup_dict[(0, ip)] = [dendrite_id]
+                    dendrite_id += 1
+
+        # INTERNEURON to OUTPUT dendrites:
+        for op in range(self.network.neuron_count[1]):
+            for inter in range(self.network.neuron_count[2]):
+                if self.network.connectome[op, inter + self.network.neuron_count[0]]:
+                    pos1 = self.neuron_positions[inter, :] + np.array((200, 0))
+                    # TODO fix this, only works with fixed axons
+                    pos2 = self.output_positions[op, :]
+                    pos1, pos2 = Embedding.shorten_synapse(pos1, pos2, "output")
+                    self.dendrite_positions[dendrite_id, 0, :] = pos1
+                    self.dendrite_positions[dendrite_id, 1, :] = pos2
+                    if (2, inter) in self.dendrite_lookup_dict:
+                        self.dendrite_lookup_dict[(2, inter)].append(dendrite_id)
+                    else:
+                        self.dendrite_lookup_dict[(2, inter)] = [dendrite_id]
+                    dendrite_id += 1
+
+        # INTER-INTER dendrites: TODO
 
     def compute(self):
         # Compute or recompute the embedding.
@@ -131,7 +172,7 @@ class Embedding():
         pygame.draw.circle(
             self.surface,
             Embedding.node_color,
-            (pos[0] - neuron.axon_lenght * axon_scale / 2, pos[1]),
+            (pos[0], pos[1]),
             Embedding.neuron_radius,
             2)
 
@@ -139,8 +180,8 @@ class Embedding():
         pygame.draw.line(
             self.surface,
             Embedding.axon_color,
-            (pos[0] - neuron.axon_lenght * axon_scale / 2, pos[1]),
-            (pos[0] + neuron.axon_lenght * axon_scale / 2, pos[1]),
+            (pos[0], pos[1]),
+            (pos[0] + neuron.axon_lenght * axon_scale, pos[1]),
             2)
 
     def draw(self):
@@ -160,15 +201,12 @@ class Embedding():
                 pos[1],
                 1)
 
-    def find_dendrite(self):
-        pass
-
     def draw_spikes(self):
         self.spike_vis_overlay = pygame.Surface(self.size, pygame.SRCALPHA)
 
-        # every iteration, check the recording queue and register all events that happened
-        # the events will be stored in the list self.spikes_in_progress in the format:
-        # [start of event, end of event, type: "d"endrite/"a"xon, dendrite id/neuron id]
+        # every iteration, check the recording queue and register all spike events that happened
+        # the spikes will be stored in the list self.spikes_in_progress in the format:
+        # [start of event, end of event, type: "d"endrite/"a"xon, neuron id]
         try:
             event = heapq.heappop(self.network.recording)
             # if event is a dendrite flash
@@ -179,21 +217,47 @@ class Embedding():
                         event[0],
                         event[0] + Embedding.flash_duration,
                         "d",
-                        event[2][1]])  # TODO the dendrite id is only equal to neuron id in some
-                                # very specific circumstances, this code needs to be generalized
+                        event[2]])
+                # if event is from interneuron:
+            else:
+                self.spikes_in_progress.append([
+                    event[0],
+                    event[0] + self.network.interneurons[event[2][1]].axon_lenght,
+                    "a",
+                    event[2]])
+                self.spikes_in_progress.append([
+                    event[0] + self.network.interneurons[event[2][1]].axon_lenght,
+                    event[0] + self.network.interneurons[event[2][1]].axon_lenght
+                    + Embedding.flash_duration,
+                    "d",
+                    event[2]])
 
         except IndexError:
             pass
 
-        # Remove spent events from list
+        # Remove spent events from list # TODO figure out how to remove and draw in one pass
         self.spikes_in_progress = [x for x in self.spikes_in_progress if
                                    x[1] > self.network.agent.env.internal_clock]
-
         # Draw
-        for event in self.spikes_in_progress:
-            pygame.draw.line(
-                self.spike_vis_overlay,
-                Embedding.spike_color,
-                self.dendrite_positions[event[3], 0],
-                self.dendrite_positions[event[3], 1],
-                1)
+        for spike in self.spikes_in_progress:
+            if spike[2] == "d":
+                # get dendrite ids
+                if spike[3] in self.dendrite_lookup_dict:
+                    ids = self.dendrite_lookup_dict[spike[3]]
+                    for id in ids:
+                        pygame.draw.line(
+                            self.spike_vis_overlay,
+                            Embedding.spike_color,
+                            self.dendrite_positions[id, 0],
+                            self.dendrite_positions[id, 1],
+                            1)
+            else:
+                pos1 = self.neuron_positions[spike[3][1]]
+                pos2 = pos1 + np.array((200, 0))  # TODO only works with fixed axons, generalize
+                time = self.network.agent.env.internal_clock - spike[0]
+                pos = pos1 + (pos2 - pos1) * time / (spike[1] - spike[0])
+                pygame.draw.circle(
+                    self.spike_vis_overlay,
+                    Embedding.spike_color,
+                    pos,
+                    Embedding.spike_radius)

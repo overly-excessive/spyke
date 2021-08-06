@@ -107,6 +107,10 @@ class Network():
         for i in range(4):
             self.add_neuron(neurons.Neuron_LIF(self))
 
+        self.connectome[3, 0] = 1
+        self.connectome[0, 3] = 1
+        self.connectome[4, 1] = 1
+
     def save_network(self):
         # save network state to file
         pass

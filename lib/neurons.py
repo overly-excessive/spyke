@@ -80,8 +80,8 @@ class Neuron_LIF(Neuron):
         super().__init__(network)
 
         # parameters
-        self.threshold = 1.0
-        self.leak = 0.1
+        self.threshold = 0.9
+        self.leak = 0.01
 
         # state
         self.activation = 0.0
