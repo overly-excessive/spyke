@@ -24,10 +24,12 @@ class Embedding():
         self.network = net
         self.surface = surface.copy()
         self.size = surface.get_size()
+        self.scale = 20
 
         self.input_positions = np.zeros((self.network.neuron_count[0], 2))
         self.output_positions = np.zeros((self.network.neuron_count[1], 2))
-        self.neuron_positions = np.zeros((self.network.neuron_count[2], 2))
+        self.neuron_positions = np.zeros((self.network.neuron_count[2], 2, 2))
+        # (neuron_id, x/y coordinate, soma/hillock)
         self.dendrite_count = np.count_nonzero(self.network.connectome)
         self.dendrite_positions = np.zeros((self.dendrite_count, 2, 2))
         # (dendrite id, input/output end, x/y coordinate)
@@ -36,9 +38,11 @@ class Embedding():
 
         # An extra transparent surface to draw spikes on a separate layer
         self.spike_vis_overlay = pygame.Surface(self.size, pygame.SRCALPHA)
-        # Storage list for spike events in progress. The events are of the form:
+        # Storage heap for spike events in progress. The events are of the form:
         # [start of event, end of event, type: "d"endrite/"a"xon, dendrite id/neuron id]
         self.spikes_in_progress = []
+        heapq.heapify(self.spikes_in_progress)
+        self.spike_frame_num = 0  # to keep track of number of frames computed so far
 
         top = np.array((self.size[0] / 2, 0))
         center = np.array(self.size) / 2
@@ -95,10 +99,19 @@ class Embedding():
 
     def compute_neuron_positions(self):
         if self.type == "line":
-            self.neuron_positions = divide_line(
+            soma_positions = divide_line(
                 np.array((self.size[0] / 2 - 100, 0)),
                 np.array((self.size[0] / 2 - 100, self.size[1])),
                 self.network.neuron_count[2])
+            for i in range(self.network.neuron_count[2]):
+                self.neuron_positions[i, 0, 0] = soma_positions[i, 0]
+                self.neuron_positions[i, 1, 0] = soma_positions[i, 1]
+                displacement = np.array((self.network.interneurons[i].axon_length * self.scale, 0))
+                hillock_pos = soma_positions[i] + displacement
+                hillock_pos = rotate(hillock_pos, self.network.interneurons[i].axon_angle)
+                self.neuron_positions[i, 0, 1] = hillock_pos[0]
+                self.neuron_positions[i, 1, 1] = hillock_pos[1]
+
         else:
             pass
             # TODO for now they are in a straight line down the middle
@@ -131,7 +144,7 @@ class Embedding():
             for inter in range(self.network.neuron_count[2]):
                 if self.network.connectome[inter + self.network.neuron_count[1], ip]:
                     pos1 = self.input_positions[ip, :]
-                    pos2 = self.neuron_positions[inter, :]
+                    pos2 = self.neuron_positions[inter, :, 0]
                     pos1, pos2 = Embedding.shorten_synapse(pos1, pos2, "both")
                     self.dendrite_positions[dendrite_id, 0, :] = pos1
                     self.dendrite_positions[dendrite_id, 1, :] = pos2
@@ -145,8 +158,7 @@ class Embedding():
         for op in range(self.network.neuron_count[1]):
             for inter in range(self.network.neuron_count[2]):
                 if self.network.connectome[op, inter + self.network.neuron_count[0]]:
-                    pos1 = self.neuron_positions[inter, :] + np.array((200, 0))
-                    # TODO fix this, only works with fixed axons
+                    pos1 = self.neuron_positions[inter, :, 1]
                     pos2 = self.output_positions[op, :]
                     pos1, pos2 = Embedding.shorten_synapse(pos1, pos2, "output")
                     self.dendrite_positions[dendrite_id, 0, :] = pos1
@@ -172,16 +184,18 @@ class Embedding():
         pygame.draw.circle(
             self.surface,
             Embedding.node_color,
-            (pos[0], pos[1]),
+            (pos[0, 0], pos[1, 0]),
             Embedding.neuron_radius,
             2)
 
         # draw axon
+        hillock_pos = pos + np.array((neuron.axon_length * axon_scale, 0))
+        hillock_pos = rotate(hillock_pos, neuron.axon_angle)
         pygame.draw.line(
             self.surface,
             Embedding.axon_color,
-            (pos[0], pos[1]),
-            (pos[0] + neuron.axon_lenght * axon_scale, pos[1]),
+            (pos[0, 0], pos[1, 0]),
+            (pos[0, 1], pos[1, 1]),
             2)
 
     def draw(self):
@@ -203,61 +217,73 @@ class Embedding():
 
     def draw_spikes(self):
         self.spike_vis_overlay = pygame.Surface(self.size, pygame.SRCALPHA)
+        self.spike_frame_num += 1
 
         # every iteration, check the recording queue and register all spike events that happened
-        # the spikes will be stored in the list self.spikes_in_progress in the format:
-        # [start of event, end of event, type: "d"endrite/"a"xon, neuron id]
+        # then transform them into visualization events
+        # the spike vis events will be stored in the heap self.spikes_in_progress in the format:
+        # (frame number of event, type: dendrite - True/axon - False, dendrite/inter-neuron id)
+        # for axon spikes there is a fourth element: internal clock time of spike
         try:
-            event = heapq.heappop(self.network.recording)
-            # if event is a dendrite flash
-            if not event[1]:
-                # if the flash is from an input neuron
-                if event[2][0] == 0:
-                    self.spikes_in_progress.append([
-                        event[0],
-                        event[0] + Embedding.flash_duration,
-                        "d",
-                        event[2]])
-                # if event is from interneuron:
+            spike = heapq.heappop(self.network.recording)
+            # if spike is from input neuron
+            if spike[1].type == "input":
+                # get ids of dendrites connecting to neuron
+                dendrites = self.dendrite_lookup_dict.get(spike[1].id, [])
+                for dendrite_id in dendrites:
+                    for i in range(Embedding.flash_duration):
+                        heapq.heappush(self.spikes_in_progress,
+                                       (self.spike_frame_num + i, True, dendrite_id))
+
+            # if event is from interneuron:
             else:
-                self.spikes_in_progress.append([
-                    event[0],
-                    event[0] + self.network.interneurons[event[2][1]].axon_lenght,
-                    "a",
-                    event[2]])
-                self.spikes_in_progress.append([
-                    event[0] + self.network.interneurons[event[2][1]].axon_lenght,
-                    event[0] + self.network.interneurons[event[2][1]].axon_lenght
-                    + Embedding.flash_duration,
-                    "d",
-                    event[2]])
+                heapq.heappush(self.spikes_in_progress,
+                               (self.spike_frame_num, False, spike[1].id[1], spike[0]))
 
         except IndexError:
             pass
 
-        # Remove spent events from list # TODO figure out how to remove and draw in one pass
-        self.spikes_in_progress = [x for x in self.spikes_in_progress if
-                                   x[1] > self.network.agent.env.internal_clock]
+        # make note of the environment internal clock time
+        env_time = self.network.agent.env.internal_clock
+
         # Draw
-        for spike in self.spikes_in_progress:
-            if spike[2] == "d":
-                # get dendrite ids
-                if spike[3] in self.dendrite_lookup_dict:
-                    ids = self.dendrite_lookup_dict[spike[3]]
-                    for id in ids:
-                        pygame.draw.line(
+        try:
+            while self.spikes_in_progress[0][0] == self.spike_frame_num:
+                vis_event = heapq.heappop(self.spikes_in_progress)
+                if vis_event[1]:
+                    pygame.draw.line(
+                        self.spike_vis_overlay,
+                        Embedding.spike_color,
+                        self.dendrite_positions[vis_event[2], 0],
+                        self.dendrite_positions[vis_event[2], 1],
+                        1)
+                else:
+                    time = env_time - vis_event[3]
+                    pos1 = self.neuron_positions[vis_event[2], :, 0]
+                    pos2 = self.neuron_positions[vis_event[2], :, 1]
+                    duration = self.network.interneurons[vis_event[2]].axon_length
+                    pos = pos1 + (pos2 - pos1) * time / duration
+                    if np.linalg.norm(pos - pos1) <= np.linalg.norm(pos2 - pos1):
+                        pygame.draw.circle(
                             self.spike_vis_overlay,
                             Embedding.spike_color,
-                            self.dendrite_positions[id, 0],
-                            self.dendrite_positions[id, 1],
-                            1)
-            else:
-                pos1 = self.neuron_positions[spike[3][1]]
-                pos2 = pos1 + np.array((200, 0))  # TODO only works with fixed axons, generalize
-                time = self.network.agent.env.internal_clock - spike[0]
-                pos = pos1 + (pos2 - pos1) * time / (spike[1] - spike[0])
-                pygame.draw.circle(
-                    self.spike_vis_overlay,
-                    Embedding.spike_color,
-                    pos,
-                    Embedding.spike_radius)
+                            pos,
+                            Embedding.spike_radius)
+
+                        heapq.heappush(self.spikes_in_progress,
+                                       (self.spike_frame_num + 1,
+                                        False,
+                                        vis_event[2],
+                                        vis_event[3]))
+
+                    else:
+                        dendrites = self.dendrite_lookup_dict.get((2, vis_event[2]), [])
+                        for dendrite_id in dendrites:
+                            for i in range(Embedding.flash_duration):
+                                heapq.heappush(self.spikes_in_progress,
+                                               (self.spike_frame_num + i + 1, True, dendrite_id))
+
+                    # TODO, propagate spike recursively add next vis event to spikes in progress
+                    # Bug: time sometimes set to -1
+        except IndexError:
+            pass

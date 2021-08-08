@@ -41,6 +41,13 @@ class Network():
         heapq.heapify(self.recording)
 
     def next(self):
+        # first, iteration of individual neurons
+        # TODO setting for neuron iteration per network iteration. currently it is one
+        for neuron in self.inputs:
+            neuron.next()
+        for neuron in self.interneurons:
+            neuron.next()
+
         # Create an event vector from all the neurons that spiked
         pre_synaptic_vector = np.zeros((self.connectome.shape[1]), dtype=bool)
 
@@ -68,13 +75,6 @@ class Network():
                         self.outputs[i].excite()
                     else:
                         self.interneurons[i - self.neuron_count[1]].excite(post_synaptic_vector[i])
-
-        # iteration of individual neurons
-        # TODO setting for neuron iteration per network iteration. currently it is one
-        for neuron in self.inputs:
-            neuron.next()
-        for neuron in self.interneurons:
-            neuron.next()
 
     def add_neuron(self, neuron):
         if neuron.type == "input":

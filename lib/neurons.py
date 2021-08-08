@@ -21,6 +21,9 @@ class NeuronBase():
         else:
             raise ValueError
 
+    def __lt__(self, other):
+        return self.id < other.id
+
 
 class InputNeuron(NeuronBase):
     def __init__(self, network):
@@ -29,13 +32,13 @@ class InputNeuron(NeuronBase):
     def spike(self):
         heapq.heappush(
             self.network.future_queue,
-            (self.network.agent.env.internal_clock + 1, self.id))
+            (self.network.agent.env.internal_clock, self.id))
 
         # Spike tracking
         if self.network.spike_tracking:
             heapq.heappush(
                 self.network.recording,
-                (self.network.agent.env.internal_clock + 1, 0, self.id))
+                (self.network.agent.env.internal_clock, self))
 
 
 class OutputNeuron(NeuronBase):
@@ -51,20 +54,21 @@ class Neuron(NeuronBase):
     def __init__(self, network):
         super().__init__(network, "inter")
 
-        self.axon_lenght = 10
+        self.axon_length = 10
+        self.axon_angle = 0
 
     def spike(self):
         # spike method called when the neuron fires
         # push a spike event to the network event heap
         heapq.heappush(
             self.network.future_queue,
-            (self.network.agent.env.internal_clock + self.axon_lenght, self.id))
+            (self.network.agent.env.internal_clock + self.axon_length, self.id))
 
         # Spike tracking
         if self.network.spike_tracking:
             heapq.heappush(
                 self.network.recording,
-                (self.network.agent.env.internal_clock + 1, self.axon_lenght, self.id))
+                (self.network.agent.env.internal_clock, self))
 
     def excite(self, value):
         pass
