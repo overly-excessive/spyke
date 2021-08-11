@@ -115,3 +115,23 @@ class Neuron_random(InputNeuron):
         rand = np.random.uniform()
         if rand <= self.spike_p:
             self.spike()
+
+
+class GrowingNeuron(Neuron):
+    def __init__(self, network, dna):
+        super().__init__(network)
+
+        self.dna = dna
+        self.pos = np.array((0, 0))
+
+    def read_dna(self):
+        pass
+
+    def change_pos(self, dx, dy):
+        self.pos += np.array((dx, dy))
+
+    def rotate_axon(self, alpha):
+        self.axon_angle += alpha
+
+    def divide(self):
+        pass

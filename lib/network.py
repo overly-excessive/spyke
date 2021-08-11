@@ -96,21 +96,30 @@ class Network():
     # TODO add ability to load saved network from file
     def load_network(self):
         # load network state from file
+        pass
 
         # this is just for testing TODO rewrite this completely
-        for i in range(3):
-            self.add_neuron(neurons.Neuron_random(self))
+        # for i in range(3):
+        #     self.add_neuron(neurons.Neuron_random(self))
         # self.connectome[0, 0] = 1
-        self.connectome[1, 1] = 1
-        self.connectome[2, 2] = 1
-
-        for i in range(4):
-            self.add_neuron(neurons.Neuron_LIF(self))
-
-        self.connectome[3, 0] = 1
-        self.connectome[0, 3] = 1
-        self.connectome[4, 1] = 1
+        # self.connectome[1, 1] = 1
+        # self.connectome[2, 2] = 1
+        #
+        # for i in range(4):
+        #     self.add_neuron(neurons.Neuron_LIF(self))
+        #
+        # self.connectome[3, 0] = 1
+        # self.connectome[0, 3] = 1
+        # self.connectome[5, 1] = 1
+        # self.connectome[6, 5] = 1
+        # self.connectome[2, 6] = 1
 
     def save_network(self):
         # save network state to file
         pass
+
+    def grow(self, dna):
+        # grow network from dna sequence
+
+        # place the frist cell
+        self.add_neuron(neurons.Neuron_LIF(self))

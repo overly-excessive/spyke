@@ -58,6 +58,15 @@ class Interface():
     def handle(self, event):
         self.manager.process_events(event)
 
+        # Handle keypresses
+        if self.env_win and event.type == pygame.KEYDOWN:
+            if event.key == pygame.K_UP:
+                self.env_win.env.agents[0].move(1)
+            elif event.key == pygame.K_RIGHT:
+                self.env_win.env.agents[0].turn_right()
+            elif event.key == pygame.K_LEFT:
+                self.env_win.env.agents[0].turn_left()
+
         # Handle GUI Events
         if event.type == pygame.USEREVENT:
 

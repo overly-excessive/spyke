@@ -25,6 +25,8 @@ class Agent1():
 
         self.actions = [self.move, self.turn_left, self.turn_right]
 
+        self.food_eaten = 0
+
     def next(self):
 
         # If force is applied, the body accelerates

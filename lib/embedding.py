@@ -169,7 +169,21 @@ class Embedding():
                         self.dendrite_lookup_dict[(2, inter)] = [dendrite_id]
                     dendrite_id += 1
 
-        # INTER-INTER dendrites: TODO
+        # INTER-INTER dendrites:
+        for n1 in range(self.network.neuron_count[2]):
+            for n2 in range(self.network.neuron_count[2]):
+                if self.network.connectome[self.network.neuron_count[1] + n2,
+                                           self.network.neuron_count[0] + n1]:
+                    pos1 = self.neuron_positions[n1, :, 1]
+                    pos2 = self.neuron_positions[n2, :, 0]
+                    pos1, pos2 = Embedding.shorten_synapse(pos1, pos2, "output")
+                    self.dendrite_positions[dendrite_id, 0, :] = pos1
+                    self.dendrite_positions[dendrite_id, 1, :] = pos2
+                    if (2, n1) in self.dendrite_lookup_dict:
+                        self.dendrite_lookup_dict[(2, n1)].append(dendrite_id)
+                    else:
+                        self.dendrite_lookup_dict[(2, n1)] = [dendrite_id]
+                    dendrite_id += 1
 
     def compute(self):
         # Compute or recompute the embedding.
@@ -283,7 +297,5 @@ class Embedding():
                                 heapq.heappush(self.spikes_in_progress,
                                                (self.spike_frame_num + i + 1, True, dendrite_id))
 
-                    # TODO, propagate spike recursively add next vis event to spikes in progress
-                    # Bug: time sometimes set to -1
         except IndexError:
             pass

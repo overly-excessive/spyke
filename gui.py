@@ -226,6 +226,10 @@ class EnvWin(DisplayWin):
             if self.selected_agent == a.id:
                 pygame.draw.circle(self.surface, "yellow", a.pos, a.radius + 3, 1)
 
+        # Draw food
+        for f in self.env.food_positions:
+            pygame.draw.circle(self.surface, "green", f, self.env.food_radius)
+
     def kill(self):
         # TODO ask if save
         self.iface.env_win.env.running = False
