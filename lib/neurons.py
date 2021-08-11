@@ -117,15 +117,20 @@ class Neuron_random(InputNeuron):
             self.spike()
 
 
-class GrowingNeuron(Neuron):
+class GrowingNeuron(Neuron_LIF):
     def __init__(self, network, dna):
         super().__init__(network)
 
         self.dna = dna
         self.pos = np.array((0, 0))
+        self.genetic_functions = {"A": self.divide()}
 
     def read_dna(self):
-        pass
+        reading = True
+        instruction = ""
+        while reading:
+            instruction += self.dna[0]
+            break
 
     def change_pos(self, dx, dy):
         self.pos += np.array((dx, dy))
@@ -135,3 +140,7 @@ class GrowingNeuron(Neuron):
 
     def divide(self):
         pass
+
+    def next(self):
+        super().next()
+        self.read_dna()

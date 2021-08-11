@@ -99,10 +99,11 @@ class Network():
         pass
 
         # this is just for testing TODO rewrite this completely
-        # for i in range(3):
-        #     self.add_neuron(neurons.Neuron_random(self))
-        # self.connectome[0, 0] = 1
-        # self.connectome[1, 1] = 1
+
+        self.add_neuron(neurons.Neuron_random(self))
+        self.add_neuron(neurons.GrowingNeuron(self, "AAA"))
+        self.connectome[3, 0] = 1
+        self.connectome[0, 1] = 1
         # self.connectome[2, 2] = 1
         #
         # for i in range(4):
